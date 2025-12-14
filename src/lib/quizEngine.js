@@ -17,13 +17,6 @@ export function shuffle(arr) {
     return a;
 }
 
-/**
- * Парсит формат:
- * 1. Вопрос...
- * A) ...
- * ...
- * Правильный ответ: C
- */
 export function parseQuestions(rawText) {
     const text = String(rawText || "").replace(/\r/g, "").trim();
     if (!text) return [];
@@ -66,32 +59,51 @@ export function parseQuestions(rawText) {
     return out;
 }
 
-export function buildSessionFromBank(bank) {
-    // перемешиваем вопросы и внутри — варианты
-    const shuffled = shuffle(
-        bank.map((q) => ({
-            ...q,
-            options: shuffle(q.options.map((o) => ({ ...o }))),
-        }))
-    );
+/**
+ * Новый генератор сессии: id, title, count, shuffle toggles
+ */
+export function buildQuizSession({
+                                     id,
+                                     bankId,
+                                     title,
+                                     parsedQuestions,
+                                     count,
+                                     shuffleQuestions = true,
+                                     shuffleAnswers = true,
+                                 }) {
+    const total = parsedQuestions.length;
 
-    const limited = shuffled.slice(0, Math.min(QUIZ_QUESTION_LIMIT, shuffled.length));
+    const base = parsedQuestions.map((q) => ({
+        ...q,
+        options: shuffleAnswers ? shuffle(q.options.map((o) => ({ ...o }))) : q.options.map((o) => ({ ...o })),
+    }));
+
+    const qs = shuffleQuestions ? shuffle(base) : base;
+
+    const limit = Math.max(1, Math.min(Number(count) || 1, total));
 
     return {
+        id,
+        bankId,
+        title,
+        questionCount: limit,
         createdAt: Date.now(),
-        limit: QUIZ_QUESTION_LIMIT,
-        questions: limited,
-        selections: {}, // { [qid]: "A" }
+        updatedAt: Date.now(),
         checked: false,
+        selections: {}, // { [qid]: "A" }
+        questions: qs.slice(0, limit),
+        score: null, // { correct, total }
     };
 }
 
 export function calcScore(session) {
     const total = session.questions.length;
-    let correctCount = 0;
+    let correct = 0;
+
     for (const q of session.questions) {
         const sel = session.selections[q.id];
-        if (sel && sel === q.correct) correctCount++;
+        if (sel && sel === q.correct) correct++;
     }
-    return { correctCount, total };
+
+    return { correct, total };
 }

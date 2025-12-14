@@ -228,3 +228,307 @@ code{
     line-height: 1.45;
 }
 .explain b{ color: var(--text); }
+
+.btn:disabled{
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.grid2{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 900px){
+    .grid2{ grid-template-columns: 1fr; }
+}
+.infoCard{
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.10);
+    border-radius: 14px;
+    padding: 12px;
+}
+.infoCard h3{
+    margin: 0 0 6px;
+    font-size: 14px;
+    letter-spacing: .2px;
+}
+.infoCard p{
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.hr{
+    height: 1px;
+    background: rgba(255,255,255,.10);
+    margin: 14px 0;
+}
+.btn:disabled{
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ===== Top Navigation ===== */
+
+.appShell{
+    min-height: 100vh;
+}
+
+.skipLink{
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid var(--border);
+    color: var(--text);
+    z-index: 9999;
+}
+.skipLink:focus{
+    left: 12px;
+}
+
+.topbar{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    background: linear-gradient(180deg, rgba(11,16,32,.92), rgba(11,16,32,.72));
+    border-bottom: 1px solid var(--border);
+}
+
+.navInner{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand{
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text);
+    font-weight: 850;
+    letter-spacing: .2px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.brand:hover{
+    border-color: rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+}
+.brandDot{
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 18px rgba(122,162,255,.55);
+}
+
+.navLinks{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.navLink{
+    text-decoration: none;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.03);
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 650;
+    transition: .15s transform, .15s background, .15s border, .15s color;
+}
+.navLink:hover{
+    color: var(--text);
+    background: rgba(255,255,255,.06);
+    border-color: rgba(255,255,255,.16);
+}
+.navLink:active{
+    transform: translateY(1px);
+}
+.navLink.active{
+    color: var(--text);
+    border-color: rgba(122,162,255,.55);
+    background: rgba(122,162,255,.12);
+}
+
+.appMain{
+    /* твой .container уже центрирует контент,
+       тут только гарантируем нормальные отступы */
+    padding-top: 6px;
+}
+/* ===== Form controls (inputs/selects) ===== */
+
+.input,
+select,
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+input[type="search"]{
+    width: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,.18);
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.2;
+    outline: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    caret-color: var(--accent);
+    transition: .15s border, .15s background, .15s box-shadow;
+}
+
+.input::placeholder,
+input::placeholder{
+    color: var(--muted);
+    opacity: .85;
+}
+
+.input:focus,
+select:focus,
+input:focus{
+    border-color: rgba(122,162,255,.45);
+    box-shadow: 0 0 0 3px rgba(122,162,255,.12), inset 0 1px 0 rgba(255,255,255,.06);
+    background: rgba(0,0,0,.22);
+}
+
+/* disabled */
+.input:disabled,
+select:disabled,
+input:disabled{
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* number input – аккуратнее спиннеры */
+input[type="number"]{
+    -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button{
+    opacity: .65;
+}
+
+/* select caret */
+select{
+    appearance: none;
+    padding-right: 34px;
+    background-image:
+            linear-gradient(45deg, transparent 50%, rgba(233,236,255,.75) 50%),
+            linear-gradient(135deg, rgba(233,236,255,.75) 50%, transparent 50%);
+    background-position:
+            calc(100% - 18px) 50%,
+            calc(100% - 12px) 50%;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+}
+
+/* file input button */
+input[type="file"]{
+    color: var(--muted);
+}
+input[type="file"]::file-selector-button{
+    margin-right: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.04);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-weight: 650;
+    font-size: 13px;
+    transition: .15s transform, .15s background, .15s border;
+}
+input[type="file"]::file-selector-button:hover{
+    background: rgba(255,255,255,.06);
+    border-color: rgba(255,255,255,.16);
+}
+input[type="file"]::file-selector-button:active{
+    transform: translateY(1px);
+}
+
+
+.navToggle{
+    display:none;
+    width: 44px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,12);
+    background: rgba(255,255,255,04);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0;
+}
+.navToggle span{
+    display:block;
+    width: 18px;
+    height: 2px;
+    background: rgba(233,236,255,.9);
+    border-radius: 999px;
+    transition: .15s transform, .15s opacity;
+}
+.navToggle.open span:nth-child(1){ transform: translateY(7px) rotate(45deg); }
+.navToggle.open span:nth-child(2){ opacity: 0; }
+.navToggle.open span:nth-child(3){ transform: translateY(-7px) rotate(-45deg); }
+
+.navOverlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    border: none;
+    padding: 0;
+    margin: 0;
+    z-index: 40;
+}
+
+/* На мобилке превращаем navLinks в drawer */
+@media (max-width: 820px){
+    .navToggle{ display:inline-flex; z-index: 60; }
+
+    /* по умолчанию скрыто */
+    .navLinks{
+        display: none;
+    }
+
+    /* открытое меню */
+    .navLinks.open{
+        display: grid;
+        gap: 10px;
+        position: fixed;
+        top: 64px;            /* если topbar другой высоты — подгони */
+        right: 12px;
+        left: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,12);
+        background: rgba(10,14,28,.92);
+        backdrop-filter: blur(10px);
+        z-index: 50;
+    }
+
+    .navLinks.open .navLink{
+        justify-content: center;
+        width: 100%;
+    }
+}
