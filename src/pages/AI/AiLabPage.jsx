@@ -111,11 +111,7 @@ export default function AiLabPage() {
     return (
         <div className="container">
             <header className="header">
-                <h1>AI Lab (Mock)</h1>
-                <p className="sub">
-                    Сейчас генерация работает в режиме mock (без бэкенда): из текста строится набор вопросов и сохраняется как квиз в архив.
-                    Файлы (PDF/PPTX) — на следующем этапе, когда будет backend для извлечения текста.
-                </p>
+                <h1>AI Lab</h1>
             </header>
 
             <section className="card">
