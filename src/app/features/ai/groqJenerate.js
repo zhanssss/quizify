@@ -13,12 +13,9 @@ function validateParsedQuestions(parsedQuestions) {
 
 function extractJsonFromText(s) {
     const str = String(s || "").trim();
-
-    // 1) Если модель обернула в ```json ... ``` или ``` ... ```
     const fenced = str.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     if (fenced?.[1]) return fenced[1].trim();
 
-    // 2) Если есть текст вокруг — вытащим первый JSON объект
     const start = str.indexOf("{");
     const end = str.lastIndexOf("}");
     if (start !== -1 && end !== -1 && end > start) return str.slice(start, end + 1).trim();
@@ -26,78 +23,18 @@ function extractJsonFromText(s) {
     return str;
 }
 
-
 export async function generateQuestionsGroq({ mode, text, topic, count }) {
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    const model = import.meta.env.VITE_GROQ_MODEL;
-
-    if (!apiKey) throw new Error("Missing VITE_GROQ_API_KEY");
-
-    const n = Math.max(1, Math.min(300, Number(count) || 10));
-
-    const source =
-        mode === "topic"
-            ? `TOPIC:\n${topic}`
-            : `TEXT:\n${text}`;
-
-    const prompt = `
-Generate ${n} multiple-choice quiz questions in Russian.
-
-Rules:
-- 5 options (A, B, C, D, E)
-- exactly ONE correct answer
-- no explanations
-- return ONLY valid JSON
-- structure exactly as specified
-
-Source:
-${source}
-
-Return format:
-{
-  "parsedQuestions": [
-    {
-      "id": "q1",
-      "originalNumber": 1,
-      "question": "...",
-      "options": [
-        { "letter": "A", "text": "..." },
-        { "letter": "B", "text": "..." },
-        { "letter": "C", "text": "..." },
-        { "letter": "D", "text": "..." },
-        { "letter": "E", "text": "..." }
-      ],
-      "correct": "C"
-    }
-  ]
-}
-`;
-
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const res = await fetch("/.netlify/functions/groqGenerate", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-            model,
-            temperature: 0.2,
-            messages: [
-                { role: "system", content: "You are a quiz generator." },
-                { role: "user", content: prompt },
-            ],
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, text, topic, count }),
     });
 
-    if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(`Groq ${res.status}: ${errText}`);
-    }
+    const raw = await res.text();
+    if (!res.ok) throw new Error(`Groq ${res.status}: ${raw}`);
 
-
-    const json = await res.json();
+    const json = JSON.parse(raw);
     const content = json?.choices?.[0]?.message?.content;
-
     if (!content) throw new Error("Empty Groq response");
 
     const cleaned = extractJsonFromText(content);
@@ -108,7 +45,6 @@ Return format:
     } catch {
         throw new Error("Groq returned non-JSON");
     }
-
 
     if (!validateParsedQuestions(parsed.parsedQuestions)) {
         throw new Error("Invalid parsedQuestions format");
