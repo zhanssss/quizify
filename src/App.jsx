@@ -9,6 +9,7 @@ import ImportPage from "./pages/banks/ImportPage.jsx";
 import QuizCreatePage from "./pages/quizzes/QuizCreatePage.jsx";
 import QuizPage from "./pages/quizzes/QuizPage.jsx";
 import QuizArchivePage from "./pages/quizzes/QuizArchivePage.jsx";
+import QuizzesHomePage from "./pages/quizzes/QuizzesHomePage.jsx";
 
 import MaterialsArchivePage from "./pages/materials/MaterialsArchivePage.jsx";
 import UploadPage from "./pages/materials/UploadPage.jsx";
@@ -24,6 +25,7 @@ export default function App() {
 
                 <Route path="/import" element={<ImportPage />} />
 
+                <Route path="/quizzes" element={<QuizzesHomePage />} />
                 <Route path="/quizzes/create" element={<QuizCreatePage />} />
                 <Route path="/quizzes/:id" element={<QuizPage />} />
                 <Route path="/archive/quizzes" element={<QuizArchivePage />} />

@@ -7,10 +7,10 @@ import { buildQuizSession } from "../../lib/quizEngine.js";
 
 import { useListMaterialsQuery } from "../../app/features/materials/materialsApi.js";
 import { useCreateQuizMutation } from "../../app/features/quizzes/quizzesApi.js";
+import { generateQuestionsGroq } from "../../app/features/ai/groqJenerate.js";
 
 import {
     useDeleteThreadMutation,
-    useGenerateQuestionsMockMutation,
     useListThreadsQuery,
     useSaveThreadMutation,
 } from "../../app/features/ai/aiApi.js";
@@ -24,8 +24,8 @@ export default function AiLabPage() {
 
     const [saveThread] = useSaveThreadMutation();
     const [delThread] = useDeleteThreadMutation();
+    const [generating, setGenerating] = useState(false);
 
-    const [gen, { isLoading: generating }] = useGenerateQuestionsMockMutation();
     const [createQuiz, { isLoading: creatingQuiz }] = useCreateQuizMutation();
 
     const [mode, setMode] = useState("lecture"); // lecture | material
@@ -54,42 +54,44 @@ export default function AiLabPage() {
             return;
         }
 
-        // 1) генерируем parsedQuestions (mock)
-        const { parsedQuestions } = await gen({ text, count }).unwrap();
+        setGenerating(true);
+        try {
+            const { parsedQuestions } = await generateQuestionsGroq({ mode: "text", text, count });
 
-        // 2) создаём quiz session через buildQuizSession
-        const quizId = uid("quiz");
-        const session = buildQuizSession({
-            id: quizId,
-            bankId: "ai", // просто метка источника
-            title: `${title} (${Math.min(Number(count) || 1, parsedQuestions.length)} вопросов)`,
-            parsedQuestions,
-            count: Math.min(Number(count) || 1, parsedQuestions.length),
-            shuffleQuestions: settings.shuffleQuestions,
-            shuffleAnswers: settings.shuffleAnswers,
-        });
+            const quizId = uid("quiz");
+            const session = buildQuizSession({
+                id: quizId,
+                bankId: "ai",
+                title: `${title} (${Math.min(Number(count) || 1, parsedQuestions.length)} вопросов)`,
+                parsedQuestions,
+                count: Math.min(Number(count) || 1, parsedQuestions.length),
+                shuffleQuestions: settings.shuffleQuestions,
+                shuffleAnswers: settings.shuffleAnswers,
+            });
 
-        // 3) сохраняем в архив квизов
-        const saved = await createQuiz(session).unwrap();
+            const saved = await createQuiz(session).unwrap();
 
-        // 4) сохраняем AI thread в архив запросов
-        const thread = {
-            id: uid("ai"),
-            title: `${title}`,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            source:
-                mode === "lecture"
-                    ? { type: "lecture", lectureText: text }
-                    : { type: "material", materialId },
-            settings: { count: Number(count) || settings.defaultQuestionCount },
-            lastQuizId: saved.id,
-        };
+            const thread = {
+                id: uid("ai"),
+                title: `${title}`,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                source:
+                    mode === "lecture"
+                        ? { type: "lecture", lectureText: text }
+                        : { type: "material", materialId },
+                settings: { count: Number(count) || settings.defaultQuestionCount },
+                lastQuizId: saved.id,
+            };
 
-        await saveThread(thread).unwrap();
+            await saveThread(thread).unwrap();
 
-        // 5) переходим к квизу
-        nav(`/quizzes/${saved.id}`);
+            nav(`/quizzes/${saved.id}`);
+        } catch (e) {
+            alert(e?.message || "Ошибка генерации");
+        } finally {
+            setGenerating(false);
+        }
     };
 
     return (
@@ -175,8 +177,9 @@ export default function AiLabPage() {
                             onClick={onGenerateQuiz}
                             disabled={generating || creatingQuiz}
                         >
-                            Сгенерировать квиз и открыть
+                            {generating ? "Генерируем…" : "Сгенерировать квиз и открыть"}
                         </button>
+
 
                         <button className="btn" onClick={() => nav("/archive/quizzes")}>
                             Архив квизов
@@ -227,6 +230,18 @@ export default function AiLabPage() {
                     )}
                 </div>
             </section>
+            {generating && (
+                <div className="aiOverlay">
+                    <div className="aiOverlayCard">
+                        <div className="spinner" />
+                        <div>
+                            <div className="aiOverlayTitle">Генерируем вопросы…</div>
+                            <div className="aiOverlaySub">Это может занять 5–20 секунд.</div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

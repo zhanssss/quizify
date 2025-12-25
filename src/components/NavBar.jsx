@@ -73,12 +73,9 @@ export default function NavBar() {
                     className={`navLinks ${open ? "open" : ""}`}
                     aria-label="Основная навигация"
                 >
-                    <LinkItem to="/" onClick={closeMenu}>Об приложении</LinkItem>
-                    <LinkItem to="/import" onClick={closeMenu}>Импорт</LinkItem>
-                    <LinkItem to="/quizzes/create" onClick={closeMenu}>Создать квиз</LinkItem>
-                    <LinkItem to="/archive/quizzes" onClick={closeMenu}>Архив квизов</LinkItem>
-                    <LinkItem to="/archive/materials" onClick={closeMenu}>Архив материалов</LinkItem>
-                    <LinkItem to="/ai" onClick={closeMenu}>AI Lab</LinkItem>
+                    <LinkItem to="/quizzes" onClick={closeMenu}>Квизы</LinkItem>
+                    <LinkItem to="/archive/materials" onClick={closeMenu}>Материалы</LinkItem>
+                    <LinkItem to="/ai" onClick={closeMenu}>AI</LinkItem>
                     <LinkItem to="/profile" onClick={closeMenu}>Профиль</LinkItem>
                 </nav>
 

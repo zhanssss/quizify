@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetQuizByIdQuery, useUpdateQuizMutation } from "../../app/features/quizzes/quizzesApi.js";
 import { calcScore } from "../../lib/quizEngine.js";
@@ -15,7 +15,15 @@ export default function QuizPage() {
     const { data: session, isLoading } = useGetQuizByIdQuery(id);
     const [updateQuiz] = useUpdateQuizMutation();
 
+
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    useEffect(() => {
+        setActiveIndex(0);
+    }, [id]);
+
     const score = useMemo(() => (session ? calcScore(session) : { correct: 0, total: 0 }), [session]);
+
     const answeredCount = useMemo(
         () => (session?.selections ? Object.values(session.selections).filter(Boolean).length : 0),
         [session]
@@ -63,96 +71,145 @@ export default function QuizPage() {
 
     const onReset = async () => {
         await persistPatch({ selections: {}, checked: false, score: null });
+        setActiveIndex(0);
+    };
+
+    const total = session.questions.length;
+    const safeActiveIndex = Math.max(0, Math.min(activeIndex, total - 1));
+    const q = session.questions[safeActiveIndex];
+
+    const sel = session.selections?.[q.id];
+    const isCorrect = !!sel && sel === q.correct;
+
+    const goPrev = () => setActiveIndex((v) => Math.max(0, v - 1));
+    const goNext = () => setActiveIndex((v) => Math.min(total - 1, v + 1));
+
+    const jumpToFirstUnanswered = () => {
+        const idx = session.questions.findIndex((qq) => !session.selections?.[qq.id]);
+        setActiveIndex(idx === -1 ? 0 : idx);
+    };
+
+    const getNavItemClass = (qq, idx) => {
+        const picked = !!session.selections?.[qq.id];
+        const active = idx === safeActiveIndex;
+
+        if (!session.checked) {
+            return `quizNavItem ${active ? "isActive" : ""} ${picked ? "isAnswered" : "isEmpty"}`;
+        }
+
+        const ok = picked && session.selections?.[qq.id] === qq.correct;
+        return `quizNavItem ${active ? "isActive" : ""} ${picked ? "isAnswered" : "isEmpty"} ${ok ? "isCorrect" : "isWrong"}`;
     };
 
     return (
         <div className="container">
             <header className="header">
                 <h1>{session.title}</h1>
-                <p className="sub">Вопросы/ответы перемешаны. После проверки покажет ошибки по каждому вопросу.</p>
+                <p className="sub">Вопросы/ответы перемешаны. Слева навигация, в центре — один вопрос.</p>
             </header>
 
-            <section className="card">
-                <div className="hd">
-                    <h2>Прохождение</h2>
-                    <div className="row">
-                        <button className="btn primary" onClick={onCheck} disabled={session.checked}>Проверить</button>
-                        <button className="btn danger" onClick={onReset}>Сбросить</button>
-                        <button className="btn" onClick={() => nav("/archive/quizzes")}>Архив</button>
-                    </div>
-                </div>
-
-                <div className="bd">
-                    <div className="quizTop">
-                        <div className="stats">
-                            <div className="stat">Вопросов: <b>{session.questions.length}</b></div>
-                            <div className="stat">Отвечено: <b>{answeredCount}</b></div>
-                            <div className="stat">Баллы: <b>{session.checked && session.score ? `${session.score.correct}/${session.score.total}` : "—"}</b></div>
+            <section className="card quizShell">
+                <aside className="quizSidebar">
+                    <div className="quizSidebarTop">
+                        <div className="quizSidebarTitle">Навигация</div>
+                        <div className="quizSidebarMeta">
+                            <div className="quizSidebarStat">Вопросов: <b>{total}</b></div>
+                            <div className="quizSidebarStat">Отвечено: <b>{answeredCount}</b></div>
+                            <div className="quizSidebarStat">Баллы: <b>{session.checked && session.score ? `${session.score.correct}/${session.score.total}` : "—"}</b></div>
                         </div>
-                        <span className="pill">{session.checked ? "Проверено" : "Не проверено"}</span>
+
+                        <div className="quizSidebarActions">
+                            <button className="btn primary" onClick={onCheck} disabled={session.checked}>Проверить</button>
+                            <button className="btn danger" onClick={onReset}>Сбросить</button>
+                            <button className="btn" onClick={() => nav("/archive/quizzes")}>Архив</button>
+                        </div>
+
+                        <div className="quizSidebarRow">
+                            <button className="btn" onClick={jumpToFirstUnanswered}>К первому без ответа</button>
+                            <span className="pill">{session.checked ? "Проверено" : "Не проверено"}</span>
+                        </div>
                     </div>
 
-                    {session.questions.map((q, idx) => {
-                        const sel = session.selections?.[q.id];
-                        const isCorrect = sel && sel === q.correct;
+                    <div className="quizNavGrid">
+                        {session.questions.map((qq, idx) => (
+                            <button
+                                key={qq.id}
+                                type="button"
+                                className={getNavItemClass(qq, idx)}
+                                onClick={() => setActiveIndex(idx)}
+                            >
+                                {idx + 1}
+                            </button>
+                        ))}
+                    </div>
+                </aside>
 
-                        return (
-                            <div key={q.id} className={`q ${session.checked ? (isCorrect ? "correct" : "incorrect") : ""}`}>
-                                <div className="qHead">
-                                    <div>
-                                        <div className="qNum">Вопрос {idx + 1} (исходный №{q.originalNumber})</div>
-                                        <div className="qText">{q.question}</div>
-                                    </div>
-                                    <div className="qMeta">
-                                        <Badge checked={session.checked} selected={!!sel} isCorrect={isCorrect} />
-                                    </div>
-                                </div>
+                <main className="quizMain">
+                    <div className="quizMainHeader">
+                        <div className="quizMainTitle">
+                            <div className="qNum">Вопрос {safeActiveIndex + 1} (исходный №{q.originalNumber})</div>
+                            <div className="qText">{q.question}</div>
+                        </div>
 
-                                <div className="opts">
-                                    {q.options.map((o) => {
-                                        const checkedBox = sel === o.letter;
+                        <div className="quizMainMeta">
+                            <Badge checked={session.checked} selected={!!sel} isCorrect={isCorrect} />
+                        </div>
+                    </div>
 
-                                        const optClass = session.checked
-                                            ? (o.letter === q.correct
-                                                ? "opt correct"
-                                                : (sel && sel !== q.correct && o.letter === sel ? "opt incorrect" : "opt"))
-                                            : "opt";
+                    <div className="quizQuestionArea">
+                        <div className={`q quizOne ${session.checked ? (isCorrect ? "correct" : "incorrect") : ""}`}>
+                            <div className="opts">
+                                {q.options.map((o) => {
+                                    const checkedBox = sel === o.letter;
 
-                                        return (
-                                            <label
-                                                key={o.letter}
-                                                className={optClass}
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    toggleSelection(q.id, o.letter);
-                                                }}
-                                            >
-                                                <input type="checkbox" checked={checkedBox} disabled={session.checked} readOnly />
-                                                <div className="txt">
-                                                    <span className="letter">{o.letter}</span>
-                                                    <span>{o.text}</span>
-                                                </div>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
+                                    const optClass = session.checked
+                                        ? (o.letter === q.correct
+                                            ? "opt correct"
+                                            : (sel && sel !== q.correct && o.letter === sel ? "opt incorrect" : "opt"))
+                                        : "opt";
 
-                                {session.checked && (
-                                    <div className="explain">
-                                        {isCorrect ? (
-                                            <>Ответ: <b>{sel}</b>. Правильно.</>
-                                        ) : (
-                                            <>
-                                                Твой ответ: <b>{sel || "не выбран"}</b>. Правильный ответ:{" "}
-                                                <b>{q.correct}) {q.options.find((x) => x.letter === q.correct)?.text || ""}</b>.
-                                            </>
-                                        )}
-                                    </div>
-                                )}
+                                    return (
+                                        <label
+                                            key={o.letter}
+                                            className={optClass}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                toggleSelection(q.id, o.letter);
+                                            }}
+                                        >
+                                            <input type="checkbox" checked={checkedBox} disabled={session.checked} readOnly />
+                                            <div className="txt">
+                                                <span className="letter">{o.letter}</span>
+                                                <span>{o.text}</span>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
                             </div>
-                        );
-                    })}
-                </div>
+
+                            {session.checked && (
+                                <div className="explain">
+                                    {isCorrect ? (
+                                        <>Ответ: <b>{sel}</b>. Правильно.</>
+                                    ) : (
+                                        <>
+                                            Твой ответ: <b>{sel || "не выбран"}</b>. Правильный ответ:{" "}
+                                            <b>{q.correct}) {q.options.find((x) => x.letter === q.correct)?.text || ""}</b>.
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="quizBottomBar">
+                        <button className="btn" onClick={goPrev} disabled={safeActiveIndex === 0}>Назад</button>
+                        <div className="quizProgress">
+                            {safeActiveIndex + 1} / {total}
+                        </div>
+                        <button className="btn primary" onClick={goNext} disabled={safeActiveIndex === total - 1}>Вперёд</button>
+                    </div>
+                </main>
             </section>
         </div>
     );
