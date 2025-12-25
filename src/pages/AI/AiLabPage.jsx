@@ -56,15 +56,29 @@ export default function AiLabPage() {
 
         setGenerating(true);
         try {
-            const { parsedQuestions } = await generateQuestionsGroq({ mode: "text", text, count });
+            const target = Math.max(1, Math.min(40, Number(count) || 10));
+            const chunk = 20;
+
+            let all = [];
+            for (let i = 0; i < target; i += chunk) {
+                const need = Math.min(chunk, target - i);
+                const { parsedQuestions: part } = await generateQuestionsGroq({
+                    mode: "text",
+                    text,
+                    count: need,
+                });
+                all = all.concat(part);
+            }
+
+            const parsedQuestions = all.slice(0, target);
+
 
             const quizId = uid("quiz");
             const session = buildQuizSession({
                 id: quizId,
                 bankId: "ai",
-                title: `${title} (${Math.min(Number(count) || 1, parsedQuestions.length)} вопросов)`,
-                parsedQuestions,
-                count: Math.min(Number(count) || 1, parsedQuestions.length),
+                title: `${title} (${Math.min(target, parsedQuestions.length)} вопросов)`,
+                count: Math.min(target, parsedQuestions.length),
                 shuffleQuestions: settings.shuffleQuestions,
                 shuffleAnswers: settings.shuffleAnswers,
             });
@@ -125,18 +139,10 @@ export default function AiLabPage() {
 
                     <div className="row mt" style={{ gap: 10 }}>
                         <input
-                            className="input"
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Название квиза"
-                            style={{ flex: 1, minWidth: 240 }}
-                        />
-                        <input
                             className="input input--sm"
                             type="number"
                             min={1}
-                            max={300}
+                            max={40}
                             value={count}
                             onChange={(e) => setCount(e.target.value)}
                             style={{ width: 140 }}

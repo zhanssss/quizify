@@ -1,4 +1,5 @@
 // netlify/functions/groqGenerate.js
+/* eslint-disable no-undef */
 export async function handler(event) {
     try {
         if (event.httpMethod !== "POST") {
@@ -15,7 +16,8 @@ export async function handler(event) {
         const body = JSON.parse(event.body || "{}");
         const { mode = "text", text = "", topic = "", count = 10 } = body;
 
-        const n = Math.max(1, Math.min(60, Number(count) || 10));
+
+        const n = Math.max(1, Math.min(20, Number(count) || 10));
         const source =
             mode === "topic"
                 ? `TOPIC:\n${String(topic || "").trim()}`
@@ -30,7 +32,7 @@ Rules:
 - no explanations
 - DO NOT wrap in \`\`\`
 - return ONLY valid JSON
-
+- keep questions short and avoid long names/phrases
 Return format:
 {
   "parsedQuestions": [
@@ -63,7 +65,7 @@ ${source}
             body: JSON.stringify({
                 model,
                 temperature: 0.2,
-                max_tokens: 3500,
+                max_tokens: 7000,
                 messages: [
                     { role: "system", content: "You are a quiz generator." },
                     { role: "user", content: prompt },
