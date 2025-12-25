@@ -42,9 +42,15 @@ export async function generateQuestionsGroq({ mode, text, topic, count }) {
     let parsed;
     try {
         parsed = JSON.parse(cleaned);
+
+        // если модель вернула JSON как строку (экранированную)
+        if (typeof parsed === "string") {
+            parsed = JSON.parse(parsed);
+        }
     } catch {
         throw new Error("Groq returned non-JSON");
     }
+
 
     if (!validateParsedQuestions(parsed.parsedQuestions)) {
         throw new Error("Invalid parsedQuestions format");

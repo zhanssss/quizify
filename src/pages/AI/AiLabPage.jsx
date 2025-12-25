@@ -72,16 +72,22 @@ export default function AiLabPage() {
 
             const parsedQuestions = all.slice(0, target);
 
+            if (!Array.isArray(parsedQuestions)) {
+                throw new Error("AI response: parsedQuestions is missing");
+            }
+
 
             const quizId = uid("quiz");
             const session = buildQuizSession({
                 id: quizId,
                 bankId: "ai",
                 title: `${title} (${Math.min(target, parsedQuestions.length)} вопросов)`,
+                parsedQuestions, // ВАЖНО
                 count: Math.min(target, parsedQuestions.length),
                 shuffleQuestions: settings.shuffleQuestions,
                 shuffleAnswers: settings.shuffleAnswers,
             });
+
 
             const saved = await createQuiz(session).unwrap();
 
